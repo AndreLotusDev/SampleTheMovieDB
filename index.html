@@ -148,10 +148,11 @@
             const sortBy = encodeURIComponent(sortBySelect.value);
             const cacheBuster = new Date().getTime(); // Generate a random number
             let url = '';
+            //The old key was just a sample
             if (query) {
-                url = `https://api.themoviedb.org/3/search/movie?api_key=51ed244caad8303f93bd21d6a74d937c&query=${query}&page=${currentPage}&sort_by=${sortBy}&cb=${cacheBuster}`;
+                url = `https://api.themoviedb.org/3/search/movie?api_key=your_key&query=${query}&page=${currentPage}&sort_by=${sortBy}&cb=${cacheBuster}`;
             } else {
-                url = `https://api.themoviedb.org/3/discover/movie?api_key=51ed244caad8303f93bd21d6a74d937c&page=${currentPage}&sort_by=${sortBy}&cb=${cacheBuster}`;
+                url = `https://api.themoviedb.org/3/discover/movie?api_key=your_key&page=${currentPage}&sort_by=${sortBy}&cb=${cacheBuster}`;
             }
             const loader = document.querySelector('div.container #loader');
             loader.style.display = 'block';
