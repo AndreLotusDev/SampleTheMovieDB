@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+        body {
+            background-color: #86A29E;
+            background-size: contain;
+            background-position: center;
+            opacity: 1;
+        }
+
+        .movie {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .movie img {
+            max-width: 100%;
+            margin-right: 20px;
+        }
+
+        .movie-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .movie-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .movie-description {
+            font-size: 16px;
+        }
+
+        .movie-link {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">Movie Search</h1>
+        <form class="mb-4">
+            <div class="form-group">
+                <label for="query">Search movies:</label>
+                <input type="text" class="form-control" id="query" name="query" placeholder="Enter search term">
+            </div>
+            <div class="form-group">
+                <label for="sort_by">Sort by:</label>
+                <select class="form-control" id="sort_by" name="sort_by">
+                    <option value="popularity.desc">Popularity Descending</option>
+                    <option value="popularity.asc">Popularity Ascending</option>
+                    <option value="release_date.desc">Release Date Descending</option>
+                    <option value="release_date.asc">Release Date Ascending</option>
+                    <option value="revenue.desc">Revenue Descending</option>
+                    <option value="revenue.asc">Revenue Ascending</option>
+                    <option value="vote_average.desc">Rating Descending</option>
+                    <option value="vote_average.asc">Rating Ascending</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Search</button>
+        </form>
+        <div id="movies" class="row"></div>
+        <nav>
+            <ul id="pagination" class="pagination justify-content-center"></ul>
+        </nav>
+        <div id="loader" class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="sr-only">Loading...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.querySelector('div.container form');
+        const movieContainer = document.getElementById('movies');
+        const loader = document.querySelector('.loader');
+        const pagination = document.querySelector('.pagination');
+        const sortBySelect = document.querySelector('select[name="sort_by"]');
+
+        let currentPage = 1;
+        let totalPages = 1;
+
+        function renderMovies(movies) {
+            movieContainer.innerHTML = '';
+            movies.forEach(movie => {
+                const movieElement = document.createElement('div');
+                movieElement.classList.add('movie');
+                const posterPath = movie.poster_path ? `https://image.tmdb.org/t/p/w500${movie.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image';
+                movieElement.innerHTML = `
+                    <img src="${posterPath}" alt="${movie.title}">
+                    <div class="movie-details">
+                        <div class="movie-title">${movie.title}</div>
+                        <div class="movie-description">${movie.overview}</div>
+                        <a class="btn btn-primary movie-link" href="https://www.themoviedb.org/movie/${movie.id}" target="_blank" >View on TMDB</a>
+                    </div>
+                `;
+                movieContainer.appendChild(movieElement);
+            });
+        }
+
+        function renderPagination() {
+            pagination.innerHTML = '';
+            const maxPagesToShow = 11; // Show 11 pages in total
+            const halfMaxPagesToShow = Math.floor(maxPagesToShow / 2);
+            let startPage = Math.max(currentPage - halfMaxPagesToShow, 1);
+            let endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+            if (endPage - startPage < maxPagesToShow - 1) {
+                startPage = Math.max(endPage - maxPagesToShow + 1, 1);
+            }
+            for (let i = startPage; i <= endPage; i++) {
+                const pageItem = document.createElement('li');
+                pageItem.classList.add('page-item');
+                const pageLink = document.createElement('a');
+                pageLink.classList.add('page-link');
+                pageLink.textContent = i;
+                if (i === currentPage) {
+                    pageLink.classList.add('active');
+                } else {
+                    pageLink.addEventListener('click', () => {
+                        currentPage = i;
+                        fetchMovies();
+                    });
+                }
+                pageItem.appendChild(pageLink);
+                pagination.appendChild(pageItem);
+            }
+        }
+
+        function fetchMovies() {
+            const query = encodeURIComponent(form.elements.query.value);
+            const sortBy = encodeURIComponent(sortBySelect.value);
+            const cacheBuster = new Date().getTime(); // Generate a random number
+            let url = '';
+            if (query) {
+                url = `https://api.themoviedb.org/3/search/movie?api_key=51ed244caad8303f93bd21d6a74d937c&query=${query}&page=${currentPage}&sort_by=${sortBy}&cb=${cacheBuster}`;
+            } else {
+                url = `https://api.themoviedb.org/3/discover/movie?api_key=51ed244caad8303f93bd21d6a74d937c&page=${currentPage}&sort_by=${sortBy}&cb=${cacheBuster}`;
+            }
+            const loader = document.querySelector('div.container #loader');
+            loader.style.display = 'block';
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const movies = data.results;
+                    totalPages = data.total_pages;
+                    renderMovies(movies);
+                    renderPagination();
+                    loader.style.display = 'none';
+                });
+        }
+
+
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            currentPage = 1;
+            fetchMovies();
+        });
+
+        sortBySelect.addEventListener('change', () => {
+            fetchMovies();
+        });
+
+        fetchMovies();
+    </script>
+</body>
+
+</html>
